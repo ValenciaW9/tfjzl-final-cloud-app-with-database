@@ -1,13 +1,21 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import HttpResponseRedirect
+from django.views import generic
 from .models import Course, Enrollment, Submission, Choice, Question
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.models import User
-from django.shortcuts import get_object_or_404, render, redirect
+from django.shortcuts import get_object_or_404
 from django.urls import reverse
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+class CourseListView(generic.ListView):
+    model = Course
+    template_name = 'onlinecourse/course_list_bootstrap.html'
+    context_object_name = 'courses'
+
 
 def registration_request(request):
     context = {}
@@ -33,6 +41,7 @@ def registration_request(request):
             context['message'] = "User already exists."
             return render(request, 'onlinecourse/user_registration_bootstrap.html', context)
 
+
 def login_request(request):
     context = {}
     if request.method == "POST":
@@ -48,14 +57,17 @@ def login_request(request):
     else:
         return render(request, 'onlinecourse/user_login_bootstrap.html', context)
 
+
 def logout_request(request):
     logout(request)
     return redirect('onlinecourse:index')
+
 
 def index(request):
     courses = Course.objects.all()
     context = {'courses': courses}
     return render(request, 'onlinecourse/course_list_bootstrap.html', context)
+
 
 def enroll(request, course_id):
     course = get_object_or_404(Course, pk=course_id)
@@ -65,11 +77,13 @@ def enroll(request, course_id):
             Enrollment.objects.create(user=user, course=course, mode='honor')
         return HttpResponseRedirect(reverse(viewname='onlinecourse:course_details', args=(course.id,)))
 
+
 def course_details(request, course_id):
     context = {}
     course = get_object_or_404(Course, pk=course_id)
     context['course'] = course
     return render(request, 'onlinecourse/course_detail_bootstrap.html', context)
+
 
 def submit(request, course_id):
     user = request.user
@@ -83,6 +97,7 @@ def submit(request, course_id):
     submission.save()
     return HttpResponseRedirect(reverse(viewname='onlinecourse:show_exam_result',
                                         args=(course_id, submission.id)))
+
 
 def show_exam_result(request, course_id, submission_id):
     context = {}
